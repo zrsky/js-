@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>性能优化</title>
+</head>
+
+<body>
+    <div id="text"></div>
+</body>
+
+</html>
+<script type="text/javascript">
+// 节流
+var text = document.getElementById('text');
+// text.addEventListener('input',function(){debounce(fn,1000)},false)
+var timer;
+
+function debounce(fn, time) {
+    clearTimeout(timer);
+    timer = setTimeout(fn, time);
+}
+
+function fn() {
+    console.log('发送请求');
+}
+
+//参数复用  提前返回   延迟执行
+
+var throttle = function(fn, interval) {
+    var _self = fn, //保存时需要被执行的函数引用
+        timer = null, //定时器
+        firstTime = false; //是否是第一次调用
+    return function() {
+        var args = arguments,
+            _me = this;
+
+        if (firstTime) {
+            _self.apply(_me, args);
+            return firstTime = false;
+        }
+
+        if (timer) {
+            return;
+        }
+
+        timer = setTimeout(function() {
+            clearTimeout(timer);
+            timer = null;
+            _self.apply(_me, args);
+        }, interval || 500)
+    }
+
+}
+
+text.addEventListener('input',
+    throttle(fn, 500), false)
+
+////分时函数 如qq创建节点
+var ary = [];
+for (var i = 1; i <= 1000; i++) {
+    ary.push(i); // 假设 ary 装载了 1000 个好友的数据
+};
+var renderFriendList = function(data) {
+    console.log(333)
+    for (var i = 0, l = data.length; i < l; i++) {
+        var div = document.createElement('div');
+        div.innerHTML = i;
+        document.body.appendChild(div);
+    }
+};
+
+var timeChunk = function(ary, fn, count) {
+    var obj,
+        timer;
+
+    var len = ary.length;
+    var start = function() {
+        for (var i = 0; i < (Math.min(count || 1, len)); i++) {
+            obj = ary.shift();
+            console.log(111)
+            fn(obj);
+        }
+    }
+
+    timer = setInterval(function() {
+        if (ary.length === 0) {
+            console.log(1111)
+            clearInterval(timer);
+            return;
+        }
+        start();
+    }, 200);
+}
+
+timeChunk(ary, function(n) {
+    var div = document.createElement('div');
+    div.innerHTML = n;
+    document.body.appendChild(div);
+}, 8);
+
+
+//懒性加载函数
+
+var addEvent = function(ele, type, handler) {
+    if (window.addEventListener) {
+        addEvent = function(ele, type, handler) {
+            ele.addEventListener(type, handler, false);
+        }
+    } else if (window.attachEvent) {
+        addEvent = function(ele, type, handler) {
+            ele.attachEvent('on' + type, handler)
+        }
+    }
+
+    addEvent(ele, type, handler);
+}
+
+
+
+//函数柯里化  以空间换时间
+var currying = function(fn) {
+    var args = [];
+    return function() {
+        if (arguments.length === 0) {
+            return fn.apply(this, args);
+        } else {
+            [].push.apply(args, arguments);
+            return arguments.callee;
+        }
+    }
+};
+var cost = (function() {
+    var money = 0;
+    return function() {
+        for (var i = 0, l = arguments.length; i < l; i++) {
+            money += arguments[i];
+        }
+        return money;
+    }
+})();
+var cost = currying(cost); // 转化成 currying 函数
+cost(100); // 未真正求值
+cost(200); // 未真正求值
+cost(300); // 未真正求值
+alert(cost()); // 求值并输出：600
+</script>
